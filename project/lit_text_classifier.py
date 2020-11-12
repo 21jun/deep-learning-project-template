@@ -192,7 +192,7 @@ class LitTweetDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         print("setup starts")
         self.df = pd.read_csv(self.data_dir)
-        self.df = self.df[:1500]
+        self.df = self.df
         self.df['tweet'] = LitTweetDataModule.normalize_text(self.df['tweet'])
 
         self.df_train, self.df_test = train_test_split(self.df, test_size=0.3)
@@ -243,6 +243,7 @@ def cli_main():
     # ------------
     parser = ArgumentParser()
     parser.add_argument('--batch_size', default=16, type=int)
+    # https://www.kaggle.com/arkhoshghalb/twitter-sentiment-analysis-hatred-speech?select=train.csv
     parser.add_argument('--data_dir', default='./TWEET/train.csv', type=str)
     parser.add_argument('--max_len', default=100, type=int)
     parser.add_argument('--n_classes', default=2, type=int)
