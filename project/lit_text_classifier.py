@@ -28,6 +28,8 @@ class LitBertClassifier(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
+        self.example_input_array = {"input_ids": torch.LongTensor(1, 100),
+                                    "attention_mask": torch.LongTensor(1, 100)}
         self.acc = Accuracy()
         self.loss_fn = nn.CrossEntropyLoss()
 
@@ -36,6 +38,8 @@ class LitBertClassifier(pl.LightningModule):
         self.out = nn.Linear(self.bert.config.hidden_size, n_classes)
 
     def forward(self, input_ids, attention_mask):
+
+        # print(input_ids.size(), attention_mask.size())
         _, pooled_output = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask
@@ -242,16 +246,17 @@ def cli_main():
     # args
     # ------------
     parser = ArgumentParser()
-    parser.add_argument('--batch_size', default=16, type=int)
+    parser.add_argument('--batch_size', default=8, type=int)
     # https://www.kaggle.com/arkhoshghalb/twitter-sentiment-analysis-hatred-speech?select=train.csv
-    parser.add_argument('--data_dir', default='./TWEET/train.csv', type=str)
+    parser.add_argument('--data_dir', default='../data/TWEET/train.csv', type=str)
     parser.add_argument('--max_len', default=100, type=int)
     parser.add_argument('--n_classes', default=2, type=int)
-    # parser.add_argument('--gpus', default=1, type=int, help=False)
+    parser.add_argument('--gpus', default=1, type=int, help=False)
+    parser.add_argument('--weights_summary', default='full', type=str)
     # parser.add_argument('--learning_rate', default=0.001, type=float)
     # parser.add_argument('--max_epochs', default=5, type=int, help=False)
 
-    parser = pl.Trainer.add_argparse_args(parser)
+    # parser = pl.Trainer.add_argparse_args(parser)
     parser = LitBertClassifier.add_model_specific_args(parser)
     args = parser.parse_args()
 

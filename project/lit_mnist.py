@@ -16,6 +16,7 @@ class LitClassifier(pl.LightningModule):
         self.save_hyperparameters()
 
         self.acc = Accuracy()
+        self.example_input_array = torch.rand(10, 28 * 28)
 
         self.l1 = torch.nn.Linear(28 * 28, self.hparams.hidden_dim)
         self.l2 = torch.nn.Linear(self.hparams.hidden_dim, 10)
