@@ -28,8 +28,9 @@ class LitBertClassifier(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
-        self.example_input_array = {"input_ids": torch.LongTensor(1, 100),
-                                    "attention_mask": torch.LongTensor(1, 100)}
+        # gpu에서 오류남
+        # self.example_input_array = {"input_ids": torch.LongTensor(1, 100),
+        #                             "attention_mask": torch.LongTensor(1, 100)}
         self.acc = Accuracy()
         self.loss_fn = nn.CrossEntropyLoss()
 
