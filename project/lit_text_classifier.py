@@ -41,10 +41,12 @@ class LitBertClassifier(pl.LightningModule):
     def forward(self, input_ids, attention_mask):
 
         # print(input_ids.size(), attention_mask.size())
-        _, pooled_output = self.bert(
+        outputs = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask
         )
+
+        pooled_output = outputs[1]
         output = self.drop(pooled_output)
         return self.out(output)
 
