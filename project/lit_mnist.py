@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import torch
 import pytorch_lightning as pl
-from pytorch_lightning.metrics.classification.accuracy import Accuracy
+from pytorch_lightning.metrics import Accuracy
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
 
@@ -15,7 +15,9 @@ class LitClassifier(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
-        self.acc = Accuracy()
+        self.train_acc = Accuracy()
+        self.val_acc = Accuracy(compute_on_step=False)
+        self.test_acc = Accuracy(compute_on_step=False)
         self.example_input_array = torch.rand(10, 28 * 28)
 
         self.l1 = torch.nn.Linear(28 * 28, self.hparams.hidden_dim)
@@ -31,36 +33,32 @@ class LitClassifier(pl.LightningModule):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        acc = self.acc(y_hat, y)
-        # self.log("acc", acc, prog_bar=True)
-        return {"loss": loss, "acc": acc}
+        acc = self.train_acc(y_hat, y)
+        self.log("train_acc_step", acc)
+        return {"loss": loss}
 
     def training_epoch_end(self, outputs):
-
-        accs = [x['acc'] for x in outputs]
-        epoch_acc = sum(accs) / len(accs)
-        self.log("epoch_acc", epoch_acc, prog_bar=True)
+        self.log("epoch_acc", self.train_acc.compute(), prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
+        self.val_acc(y_hat, y)
         self.log('valid_loss', loss)
+
+    def validation_epoch_end(self, outputs):
+        self.log("epoch_val_acc", self.val_acc.compute(), prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-
-        acc = self.acc(y_hat, y)
+        self.test_acc(y_hat, y)
         loss = F.cross_entropy(y_hat, y)
         self.log('test_loss', loss)
-        return {"loss": loss, "acc": acc}
 
     def test_epoch_end(self, outputs):
-
-        accs = [x['acc'] for x in outputs]
-        epoch_acc = sum(accs) / len(accs)
-        self.log("test_acc", epoch_acc, prog_bar=True)
+        self.log("test_acc", self.test_acc.compute(), prog_bar=True)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
@@ -69,7 +67,7 @@ class LitClassifier(pl.LightningModule):
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument('--hidden_dim', type=int, default=128)
-        parser.add_argument('--learning_rate', type=float, default=0.0001)
+        parser.add_argument('--learning_rate', type=float, default=0.001)
         return parser
 
 
