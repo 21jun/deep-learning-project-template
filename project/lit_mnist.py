@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 
 import torch
+import torch.nn as nn
 import pytorch_lightning as pl
 from pytorch_lightning.metrics import Accuracy
 from torch.nn import functional as F
@@ -19,14 +20,22 @@ class LitClassifier(pl.LightningModule):
         self.val_acc = Accuracy(compute_on_step=False)
         self.test_acc = Accuracy(compute_on_step=False)
         self.example_input_array = torch.rand(10, 28 * 28)
+        self.dims = (1, 28, 28)
+        channels, width, height = self.dims
 
-        self.l1 = torch.nn.Linear(28 * 28, self.hparams.hidden_dim)
-        self.l2 = torch.nn.Linear(self.hparams.hidden_dim, 10)
+        self.model = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(channels * width * height, self.hparams.hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(self.hparams.hidden_dim, self.hparams.hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(self.hparams.hidden_dim, 10)
+        )
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
-        x = torch.relu(self.l1(x))
-        x = torch.relu(self.l2(x))
+        x = self.model(x)
         return x
 
     def training_step(self, batch, batch_idx):
